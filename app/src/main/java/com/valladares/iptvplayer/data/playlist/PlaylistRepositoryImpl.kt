@@ -150,4 +150,23 @@ class PlaylistRepositoryImpl @Inject constructor(
         val existing = playlistDao.getById(playlistId) ?: return
         playlistDao.delete(existing)
     }
+
+    /**
+     * @see PlaylistRepository.getXtreamCredentials
+     */
+    override suspend fun getXtreamCredentials(playlistId: String): XtreamCredentials? {
+        val entity = playlistDao.getById(playlistId) ?: return null
+        val server = entity.xtreamServerUrl
+        val user = entity.xtreamUsername
+        val pass = entity.xtreamPassword
+        return if (server != null && user != null && pass != null) {
+            XtreamCredentials(
+                serverUrl = server,
+                username = user,
+                password = pass
+            )
+        } else {
+            null
+        }
+    }
 }

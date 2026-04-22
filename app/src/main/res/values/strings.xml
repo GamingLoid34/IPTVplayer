@@ -41,4 +41,12 @@
     <string name="import_retry">Försök igen</string>
     <string name="player_back">Gå tillbaka från uppspelning</string>
     <string name="back">Gå tillbaka</string>
+    <string name="playlist_detail_tab_live">Live</string>
+    <string name="playlist_detail_tab_vod">Filmer</string>
+    <string name="playlist_detail_tab_series">Serier</string>
+    <string name="tab_coming_soon_vod">Filmer kommer snart</string>
+    <string name="tab_coming_soon_series">Serier kommer snart</string>
+    <string name="live_category_other">Övrigt</string>
+    <string name="live_tab_empty">Inga kanaler i denna spellista</string>
+    <string name="live_tab_loading">Laddar kanaler…</string>
 </resources>

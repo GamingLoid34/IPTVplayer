@@ -22,6 +22,18 @@ sealed class NavDestination(val route: String) {
     }
 
     /**
+     * Xtream/M3U playlist details with tabs. Path parameter: [ARG_PLAYLIST_ID].
+     */
+    data object PlaylistDetail : NavDestination("playlist_detail/{playlistId}") {
+        const val ARG_PLAYLIST_ID: String = "playlistId"
+
+        /**
+         * Builds a concrete route for the given [playlistId].
+         */
+        fun createRoute(playlistId: String): String = "playlist_detail/$playlistId"
+    }
+
+    /**
      * Full-screen playback. Path parameter: percent-encoded [streamUrl].
      */
     data object Player : NavDestination("player/{streamUrl}") {

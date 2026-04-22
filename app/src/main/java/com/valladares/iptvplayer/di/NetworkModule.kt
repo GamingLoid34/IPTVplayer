@@ -3,6 +3,7 @@ package com.valladares.iptvplayer.di
 import com.valladares.iptvplayer.BuildConfig
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcher
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcherImpl
+import com.valladares.iptvplayer.data.xtream.model.XtreamStreamUrls
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -49,6 +50,13 @@ object NetworkModule {
         coerceInputValues = true
         isLenient = true
     }
+
+    /**
+     * Injects the stateless [XtreamStreamUrls] factory (for Hilt view models and repositories).
+     */
+    @Provides
+    @Singleton
+    fun provideXtreamStreamUrls(): XtreamStreamUrls = XtreamStreamUrls
 }
 
 /**

@@ -44,4 +44,9 @@ interface PlaylistRepository {
      * Deletes a playlist and its channels (CASCADE) by [playlistId].
      */
     suspend fun deletePlaylist(playlistId: String)
+
+    /**
+     * Returns stored Xtream credentials for [playlistId], or null for M3U-only lists.
+     */
+    suspend fun getXtreamCredentials(playlistId: String): XtreamCredentials?
 }

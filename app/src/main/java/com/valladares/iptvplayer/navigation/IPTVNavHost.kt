@@ -13,6 +13,7 @@ import com.valladares.iptvplayer.feature.channels.ChannelListScreen
 import com.valladares.iptvplayer.feature.home.HomeScreen
 import com.valladares.iptvplayer.feature.importplaylist.ImportPlaylistScreen
 import com.valladares.iptvplayer.feature.player.PlayerScreen
+import com.valladares.iptvplayer.feature.playlistdetail.PlaylistDetailScreen
 
 /**
  * Root navigation graph: home → channels → player.
@@ -32,7 +33,7 @@ fun IPTVNavHost(
                 onImportClick = { navController.navigate(NavDestination.Import.route) },
                 onPlaylistClick = { playlistId: String ->
                     navController.navigate(
-                        NavDestination.Channels.createRoute(playlistId)
+                        NavDestination.PlaylistDetail.createRoute(playlistId)
                     )
                 },
                 modifier = Modifier.fillMaxSize()
@@ -42,6 +43,24 @@ fun IPTVNavHost(
             ImportPlaylistScreen(
                 onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        composable(
+            route = NavDestination.PlaylistDetail.route,
+            arguments = listOf(
+                navArgument(NavDestination.PlaylistDetail.ARG_PLAYLIST_ID) {
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            PlaylistDetailScreen(
+                onBack = { navController.popBackStack() },
+                onChannelClick = { streamUrl: String ->
+                    navController.navigate(
+                        NavDestination.Player.createRoute(streamUrl)
+                    )
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
