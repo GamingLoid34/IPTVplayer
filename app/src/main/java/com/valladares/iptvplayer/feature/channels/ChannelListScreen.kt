@@ -1,23 +1,13 @@
-@file:OptIn(
-    androidx.compose.foundation.ExperimentalFoundationApi::class
-)
-
 package com.valladares.iptvplayer.feature.channels
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.stickyHeader
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Tv
@@ -25,16 +15,16 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,7 +36,32 @@ import com.valladares.iptvplayer.data.playlist.model.Channel
 import com.valladares.iptvplayer.ui.theme.IPTVPlayerTheme
 
 /**
- * Presents channels grouped by group title, with optional logos from [Channel.logoUrl].
+ * Internt sealed-interface för att representera alternerande
+ * header- och kanalrader i en platt lista. Detta undviker nästlade
+ * forEach-lambdas inuti LazyColumn där scope-resolution blir bräckligt.
+ */
+private sealed interface ChannelListItem {
+    val listKey: String
+
+    data class Header(val title: String) : ChannelListItem {
+        override val listKey: String = "header_$title"
+    }
+
+    data class Row(val channel: Channel) : ChannelListItem {
+        override val listKey: String = "channel_${channel.id}"
+    }
+}
+
+private fun Map<String, List<Channel>>.toListItems(): List<ChannelListItem> =
+    flatMap { (group, channels) ->
+        buildList {
+            add(ChannelListItem.Header(group))
+            channels.forEach { add(ChannelListItem.Row(it)) }
+        }
+    }
+
+/**
+ * Screen that renders channels for one playlist and routes row clicks to playback.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,151 +72,152 @@ fun ChannelListScreen(
     viewModel: ChannelListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ChannelListScreenContent(
-        uiState = uiState,
-        onChannelClick = onChannelClick,
-        onBack = onBack,
-        modifier = modifier
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChannelListScreenContent(
-    uiState: ChannelListUiState,
-    onChannelClick: (String) -> Unit,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier
-) {
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.channels_title)) },
+                title = { Text(text = androidx.compose.ui.res.stringResource(R.string.channels_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
+                            contentDescription = androidx.compose.ui.res.stringResource(R.string.back)
                         )
                     }
                 }
             )
         }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when (uiState) {
-                ChannelListUiState.Loading -> {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
-
-                ChannelListUiState.Empty -> {
-                    Text(
-                        text = stringResource(R.string.channels_empty),
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-
-                is ChannelListUiState.Content -> {
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        uiState.groupedChannels.forEach { (groupTitle, channels) ->
-                            stickyHeader {
-                                Text(
-                                    text = groupTitle,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            color = MaterialTheme.colorScheme
-                                                .surfaceContainerHighest
-                                        )
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                            }
-                            items(
-                                items = channels,
-                                key = { it.id }
-                            ) { channel ->
-                                ChannelRow(
-                                    channel = channel,
-                                    onClick = { onChannelClick(channel.streamUrl) }
-                                )
-                            }
-                        }
-                    }
-                }
+    ) { padding ->
+        when (val state = uiState) {
+            ChannelListUiState.Loading -> {
+                LoadingContent(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                )
             }
-        }
-    }
-}
 
-@Composable
-private fun ChannelRow(
-    channel: Channel,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        if (!channel.logoUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = channel.logoUrl,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            Icon(
-                imageVector = Icons.Filled.Tv,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .padding(4.dp)
-            )
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .align(Alignment.CenterVertically)
-        ) {
-            Text(
-                text = channel.name,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            val groupLabel = channel.groupTitle.orEmpty()
-            if (groupLabel.isNotEmpty()) {
-                Text(
-                    text = groupLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+            ChannelListUiState.Empty -> {
+                EmptyContent(
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
+                )
+            }
+
+            is ChannelListUiState.Content -> {
+                ChannelListContent(
+                    items = state.groupedChannels.toListItems(),
+                    onChannelClick = onChannelClick,
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize()
                 )
             }
         }
     }
 }
 
+@Composable
+private fun LoadingContent(modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun EmptyContent(modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Text(text = androidx.compose.ui.res.stringResource(R.string.channels_empty))
+    }
+}
+
+@Composable
+private fun ChannelListContent(
+    items: List<ChannelListItem>,
+    onChannelClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier) {
+        items(
+            items = items,
+            key = { it.listKey }
+        ) { item ->
+            when (item) {
+                is ChannelListItem.Header -> GroupHeader(title = item.title)
+                is ChannelListItem.Row -> ChannelRow(
+                    channel = item.channel,
+                    onClick = { onChannelClick(item.channel.streamUrl) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroupHeader(title: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ChannelRow(
+    channel: Channel,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ListItem(
+        modifier = modifier.clickable(onClick = onClick),
+        headlineContent = {
+            Text(
+                text = channel.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        supportingContent = channel.groupTitle?.let { group ->
+            {
+                Text(
+                    text = group,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
+        leadingContent = {
+            if (channel.logoUrl != null) {
+                AsyncImage(
+                    model = channel.logoUrl,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Tv,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+        },
+        tonalElevation = 0.dp
+    )
+}
+
 @Preview(showBackground = true, name = "Channels Loading")
 @Composable
 private fun ChannelListLoadingPreview() {
     IPTVPlayerTheme {
-        ChannelListScreenContent(
-            uiState = ChannelListUiState.Loading,
-            onChannelClick = {},
-            onBack = {}
+        LoadingContent(
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -210,10 +226,8 @@ private fun ChannelListLoadingPreview() {
 @Composable
 private fun ChannelListEmptyPreview() {
     IPTVPlayerTheme {
-        ChannelListScreenContent(
-            uiState = ChannelListUiState.Empty,
-            onChannelClick = {},
-            onBack = {}
+        EmptyContent(
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -221,19 +235,41 @@ private fun ChannelListEmptyPreview() {
 @Preview(showBackground = true, name = "Channels Content")
 @Composable
 private fun ChannelListContentPreview() {
-    val ch = Channel(
-        id = "c1",
-        name = "SVT 1",
-        streamUrl = "https://example.com/svt1.m3u8",
-        logoUrl = null,
-        groupTitle = "Sverige"
+    val fake = listOf(
+        ChannelListItem.Header("Sport"),
+        ChannelListItem.Row(
+            Channel(
+                id = "1",
+                name = "Kanal 1",
+                streamUrl = "http://x",
+                logoUrl = null,
+                groupTitle = "Sport"
+            )
+        ),
+        ChannelListItem.Row(
+            Channel(
+                id = "2",
+                name = "Kanal 2",
+                streamUrl = "http://y",
+                logoUrl = null,
+                groupTitle = "Sport"
+            )
+        ),
+        ChannelListItem.Header("Nyheter"),
+        ChannelListItem.Row(
+            Channel(
+                id = "3",
+                name = "Kanal 3",
+                streamUrl = "http://z",
+                logoUrl = null,
+                groupTitle = "Nyheter"
+            )
+        )
     )
-    val map = mapOf("Sverige" to listOf(ch))
     IPTVPlayerTheme {
-        ChannelListScreenContent(
-            uiState = ChannelListUiState.Content(map),
-            onChannelClick = {},
-            onBack = {}
+        ChannelListContent(
+            items = fake,
+            onChannelClick = {}
         )
     }
 }
