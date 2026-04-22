@@ -9,6 +9,12 @@ import com.valladares.iptvplayer.data.playlist.model.Channel
 import com.valladares.iptvplayer.data.playlist.model.Playlist
 import com.valladares.iptvplayer.data.playlist.model.PlaylistSourceType
 import com.valladares.iptvplayer.data.playlist.parser.M3UParser
+import com.valladares.iptvplayer.data.xtream.XtreamAuthenticator
+import com.valladares.iptvplayer.data.xtream.XtreamSyncService
+import com.valladares.iptvplayer.data.xtream.model.XtreamAuthFailureReason
+import com.valladares.iptvplayer.data.xtream.model.XtreamAuthStatus
+import com.valladares.iptvplayer.data.xtream.model.XtreamCredentials
+import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,7 +28,9 @@ import kotlinx.coroutines.flow.map
 class PlaylistRepositoryImpl @Inject constructor(
     private val playlistDao: PlaylistDao,
     private val channelDao: ChannelDao,
-    private val m3uParser: M3UParser
+    private val m3uParser: M3UParser,
+    private val xtreamAuthenticator: XtreamAuthenticator,
+    private val xtreamSyncService: XtreamSyncService
 ) : PlaylistRepository {
 
     /**
@@ -74,6 +82,65 @@ class PlaylistRepositoryImpl @Inject constructor(
         }
         channelDao.replaceChannelsForPlaylist(playlistId, channelEntities)
         return Result.success(playlistId)
+    }
+
+    /**
+     * @see PlaylistRepository.importXtreamPlaylist
+     */
+    override suspend fun importXtreamPlaylist(
+        name: String,
+        credentials: XtreamCredentials
+    ): Result<String> {
+        return try {
+            when (val authStatus = xtreamAuthenticator.authenticate(credentials)) {
+                is XtreamAuthStatus.Failed -> {
+                    val errorKey = when (authStatus.reason) {
+                        XtreamAuthFailureReason.INVALID_CREDENTIALS ->
+                            "import_error_xtream_auth_invalid_credentials"
+
+                        XtreamAuthFailureReason.ACCOUNT_EXPIRED ->
+                            "import_error_xtream_auth_expired"
+
+                        XtreamAuthFailureReason.ACCOUNT_DISABLED ->
+                            "import_error_xtream_auth_disabled"
+
+                        XtreamAuthFailureReason.NETWORK_ERROR ->
+                            "import_error_xtream_network"
+
+                        XtreamAuthFailureReason.SERVER_ERROR ->
+                            "import_error_xtream_server_error"
+
+                        XtreamAuthFailureReason.UNKNOWN ->
+                            "import_error_xtream_unknown"
+                    }
+                    Result.failure(IllegalStateException(errorKey))
+                }
+
+                is XtreamAuthStatus.Success -> {
+                    val playlistId = UUID.randomUUID().toString()
+                    val now = System.currentTimeMillis()
+                    val entity = PlaylistEntity(
+                        id = playlistId,
+                        name = name,
+                        sourceType = PlaylistSourceType.XTREAM.name,
+                        sourceUri = credentials.serverUrl,
+                        createdAt = now,
+                        updatedAt = now,
+                        xtreamServerUrl = credentials.serverUrl,
+                        xtreamUsername = credentials.username,
+                        xtreamPassword = credentials.password
+                    )
+                    playlistDao.insert(entity)
+                    // Sync error should not block successful Xtream import if credentials are valid.
+                    xtreamSyncService.syncLive(playlistId, credentials)
+                    Result.success(playlistId)
+                }
+            }
+        } catch (e: IOException) {
+            Result.failure(IOException("import_error_xtream_network", e))
+        } catch (e: Exception) {
+            Result.failure(IllegalStateException("import_error_xtream_unknown", e))
+        }
     }
 
     /**

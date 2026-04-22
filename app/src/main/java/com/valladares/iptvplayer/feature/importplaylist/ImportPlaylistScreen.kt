@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,9 +30,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,9 +59,14 @@ fun ImportPlaylistScreen(
     val sourceType by viewModel.sourceType.collectAsStateWithLifecycle()
     val urlInput by viewModel.urlInput.collectAsStateWithLifecycle()
     val fileUri by viewModel.fileUri.collectAsStateWithLifecycle()
+    val serverUrl by viewModel.serverUrl.collectAsStateWithLifecycle()
+    val xtreamUsername by viewModel.xtreamUsername.collectAsStateWithLifecycle()
+    val xtreamPassword by viewModel.xtreamPassword.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    var showPasteDialog by rememberSaveable { mutableStateOf(false) }
+    var pastedM3uUrl by rememberSaveable { mutableStateOf("") }
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -80,7 +90,9 @@ fun ImportPlaylistScreen(
     val isFormValid = name.isNotBlank() && when (sourceType) {
         PlaylistSourceType.URL -> urlInput.isNotBlank()
         PlaylistSourceType.FILE -> !fileUri.isNullOrBlank()
-        PlaylistSourceType.XTREAM -> false
+        PlaylistSourceType.XTREAM -> serverUrl.isNotBlank() &&
+            xtreamUsername.isNotBlank() &&
+            xtreamPassword.isNotBlank()
     }
 
     Scaffold(
@@ -163,9 +175,40 @@ fun ImportPlaylistScreen(
                 }
 
                 PlaylistSourceType.XTREAM -> {
+                    OutlinedTextField(
+                        value = serverUrl,
+                        onValueChange = viewModel::onServerUrlChange,
+                        label = { Text(text = stringResource(R.string.import_xtream_server_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isLoading
+                    )
+                    OutlinedTextField(
+                        value = xtreamUsername,
+                        onValueChange = viewModel::onXtreamUsernameChange,
+                        label = { Text(text = stringResource(R.string.import_xtream_username_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isLoading
+                    )
+                    OutlinedTextField(
+                        value = xtreamPassword,
+                        onValueChange = viewModel::onXtreamPasswordChange,
+                        label = { Text(text = stringResource(R.string.import_xtream_password_label)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isLoading
+                    )
+                    TextButton(
+                        onClick = { showPasteDialog = true },
+                        enabled = !isLoading
+                    ) {
+                        Text(text = stringResource(R.string.import_xtream_paste_m3u))
+                    }
                     Text(
-                        text = stringResource(R.string.import_error_xtream_not_implemented),
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = stringResource(R.string.import_xtream_paste_m3u_hint),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -186,6 +229,13 @@ fun ImportPlaylistScreen(
                     CircularProgressIndicator()
                     Text(text = stringResource(R.string.import_loading))
                 }
+                if (sourceType == PlaylistSourceType.XTREAM) {
+                    Text(
+                        text = stringResource(R.string.import_xtream_loading_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             if (uiState is ImportUiState.Error) {
@@ -194,6 +244,37 @@ fun ImportPlaylistScreen(
                 }
             }
         }
+    }
+
+    if (showPasteDialog) {
+        AlertDialog(
+            onDismissRequest = { showPasteDialog = false },
+            title = { Text(text = stringResource(R.string.import_xtream_paste_m3u)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = stringResource(R.string.import_xtream_paste_m3u_hint))
+                    OutlinedTextField(
+                        value = pastedM3uUrl,
+                        onValueChange = { pastedM3uUrl = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onPasteM3uUrl(pastedM3uUrl)
+                    showPasteDialog = false
+                }) {
+                    Text(text = stringResource(R.string.import_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasteDialog = false }) {
+                    Text(text = stringResource(R.string.back))
+                }
+            }
+        )
     }
 }
 
@@ -214,7 +295,7 @@ private fun SourceTypeSelector(
                 enabled = enabled
             )
             Text(
-                text = stringResource(R.string.import_source_url),
+                text = stringResource(R.string.import_source_m3u_url),
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
@@ -225,7 +306,18 @@ private fun SourceTypeSelector(
                 enabled = enabled
             )
             Text(
-                text = stringResource(R.string.import_source_file),
+                text = stringResource(R.string.import_source_m3u_file),
+                modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+        Row {
+            RadioButton(
+                selected = selected == PlaylistSourceType.XTREAM,
+                onClick = { onSelect(PlaylistSourceType.XTREAM) },
+                enabled = enabled
+            )
+            Text(
+                text = stringResource(R.string.import_source_xtream),
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
@@ -236,6 +328,15 @@ private fun String.toErrorMessage(context: android.content.Context): String = wh
     "import_error_name" -> context.getString(R.string.import_error_name)
     "import_error_url" -> context.getString(R.string.import_error_url)
     "import_error_file" -> context.getString(R.string.import_error_file)
-    "import_error_xtream_not_implemented" -> context.getString(R.string.import_error_xtream_not_implemented)
+    "import_error_xtream_invalid_url" -> context.getString(R.string.import_error_xtream_invalid_url)
+    "import_error_xtream_server_required" -> context.getString(R.string.import_error_xtream_server_required)
+    "import_error_xtream_username_required" -> context.getString(R.string.import_error_xtream_username_required)
+    "import_error_xtream_password_required" -> context.getString(R.string.import_error_xtream_password_required)
+    "import_error_xtream_auth_invalid_credentials" -> context.getString(R.string.import_error_xtream_auth_invalid_credentials)
+    "import_error_xtream_auth_expired" -> context.getString(R.string.import_error_xtream_auth_expired)
+    "import_error_xtream_auth_disabled" -> context.getString(R.string.import_error_xtream_auth_disabled)
+    "import_error_xtream_network" -> context.getString(R.string.import_error_xtream_network)
+    "import_error_xtream_server_error" -> context.getString(R.string.import_error_xtream_server_error)
+    "import_error_xtream_unknown" -> context.getString(R.string.import_error_xtream_unknown)
     else -> this
 }

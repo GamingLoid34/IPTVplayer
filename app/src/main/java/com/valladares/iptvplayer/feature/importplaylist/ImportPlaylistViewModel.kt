@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcher
 import com.valladares.iptvplayer.data.playlist.model.PlaylistSourceType
 import com.valladares.iptvplayer.domain.usecase.ImportPlaylistUseCase
+import com.valladares.iptvplayer.domain.usecase.ImportXtreamPlaylistUseCase
+import com.valladares.iptvplayer.data.xtream.model.XtreamCredentials
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import javax.inject.Inject
@@ -46,6 +48,7 @@ sealed interface ImportUiState {
 @HiltViewModel
 class ImportPlaylistViewModel @Inject constructor(
     private val importPlaylistUseCase: ImportPlaylistUseCase,
+    private val importXtreamPlaylistUseCase: ImportXtreamPlaylistUseCase,
     private val contentFetcher: PlaylistContentFetcher
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ImportUiState>(ImportUiState.Idle)
@@ -53,6 +56,9 @@ class ImportPlaylistViewModel @Inject constructor(
     private val _sourceType = MutableStateFlow(PlaylistSourceType.URL)
     private val _urlInput = MutableStateFlow("")
     private val _fileUri = MutableStateFlow<String?>(null)
+    private val _serverUrl = MutableStateFlow("")
+    private val _xtreamUsername = MutableStateFlow("")
+    private val _xtreamPassword = MutableStateFlow("")
 
     /**
      * Current async result state for the import flow.
@@ -78,6 +84,21 @@ class ImportPlaylistViewModel @Inject constructor(
      * Selected SAF URI as string when importing from file.
      */
     val fileUri: StateFlow<String?> = _fileUri.asStateFlow()
+
+    /**
+     * Xtream server URL input.
+     */
+    val serverUrl: StateFlow<String> = _serverUrl.asStateFlow()
+
+    /**
+     * Xtream username input.
+     */
+    val xtreamUsername: StateFlow<String> = _xtreamUsername.asStateFlow()
+
+    /**
+     * Xtream password input.
+     */
+    val xtreamPassword: StateFlow<String> = _xtreamPassword.asStateFlow()
 
     /**
      * Updates playlist name field.
@@ -108,6 +129,43 @@ class ImportPlaylistViewModel @Inject constructor(
     }
 
     /**
+     * Updates Xtream server URL field.
+     */
+    fun onServerUrlChange(value: String) {
+        _serverUrl.value = value
+    }
+
+    /**
+     * Updates Xtream username field.
+     */
+    fun onXtreamUsernameChange(value: String) {
+        _xtreamUsername.value = value
+    }
+
+    /**
+     * Updates Xtream password field.
+     */
+    fun onXtreamPasswordChange(value: String) {
+        _xtreamPassword.value = value
+    }
+
+    /**
+     * Parses an M3U URL and fills Xtream credentials fields when successful.
+     */
+    fun onPasteM3uUrl(url: String) {
+        val result = XtreamCredentials.fromM3uUrl(url)
+        result.onSuccess { credentials ->
+            _serverUrl.value = credentials.serverUrl
+            _xtreamUsername.value = credentials.username
+            _xtreamPassword.value = credentials.password
+            _sourceType.value = PlaylistSourceType.XTREAM
+            _uiState.value = ImportUiState.Idle
+        }.onFailure {
+            _uiState.value = ImportUiState.Error("import_error_xtream_invalid_url")
+        }
+    }
+
+    /**
      * Clears current error and returns to idle state.
      */
     fun onResetError() {
@@ -123,12 +181,18 @@ class ImportPlaylistViewModel @Inject constructor(
             val selectedSourceType = sourceType.value
             val trimmedUrl = urlInput.value.trim()
             val selectedFileUri = fileUri.value
+            val trimmedServerUrl = serverUrl.value.trim()
+            val trimmedXtreamUsername = xtreamUsername.value.trim()
+            val trimmedXtreamPassword = xtreamPassword.value.trim()
 
             val validationError = validateInputs(
                 name = trimmedName,
                 sourceType = selectedSourceType,
                 url = trimmedUrl,
-                fileUri = selectedFileUri
+                fileUri = selectedFileUri,
+                serverUrl = trimmedServerUrl,
+                xtreamUsername = trimmedXtreamUsername,
+                xtreamPassword = trimmedXtreamPassword
             )
             if (validationError != null) {
                 _uiState.value = ImportUiState.Error(validationError)
@@ -136,55 +200,79 @@ class ImportPlaylistViewModel @Inject constructor(
             }
 
             _uiState.value = ImportUiState.Loading
+            when (selectedSourceType) {
+                PlaylistSourceType.URL,
+                PlaylistSourceType.FILE -> {
+                    val sourceUri = when (selectedSourceType) {
+                        PlaylistSourceType.URL -> trimmedUrl
+                        PlaylistSourceType.FILE -> selectedFileUri.orEmpty()
+                        PlaylistSourceType.XTREAM -> ""
+                    }
 
-            val sourceUri = when (selectedSourceType) {
-                PlaylistSourceType.URL -> trimmedUrl
-                PlaylistSourceType.FILE -> selectedFileUri.orEmpty()
+                    val contentResult = withContext(Dispatchers.IO) {
+                        when (selectedSourceType) {
+                            PlaylistSourceType.URL -> contentFetcher.fetchFromUrl(trimmedUrl)
+                            PlaylistSourceType.FILE -> contentFetcher.fetchFromUri(sourceUri)
+                            PlaylistSourceType.XTREAM -> Result.failure(
+                                IOException("import_error_xtream_unknown")
+                            )
+                        }
+                    }
+
+                    val content = contentResult.getOrElse { error ->
+                        _uiState.value = ImportUiState.Error(
+                            error.message ?: "import_error_xtream_unknown"
+                        )
+                        return@launch
+                    }
+
+                    val importResult = withContext(Dispatchers.IO) {
+                        importPlaylistUseCase(
+                            name = trimmedName,
+                            sourceType = selectedSourceType,
+                            sourceUri = sourceUri,
+                            content = content
+                        )
+                    }
+
+                    _uiState.value = if (importResult.isSuccess) {
+                        ImportUiState.Success
+                    } else {
+                        ImportUiState.Error(
+                            importResult.exceptionOrNull()?.message
+                                ?: "import_error_xtream_unknown"
+                        )
+                    }
+                }
+
                 PlaylistSourceType.XTREAM -> {
-                    _uiState.value = ImportUiState.Error("import_error_xtream_not_implemented")
-                    return@launch
+                    val credentials = runCatching {
+                        XtreamCredentials(
+                            serverUrl = trimmedServerUrl,
+                            username = trimmedXtreamUsername,
+                            password = trimmedXtreamPassword
+                        )
+                    }.getOrElse {
+                        _uiState.value = ImportUiState.Error("import_error_xtream_invalid_url")
+                        return@launch
+                    }
+
+                    val importResult = withContext(Dispatchers.IO) {
+                        importXtreamPlaylistUseCase(
+                            name = trimmedName,
+                            credentials = credentials
+                        )
+                    }
+
+                    _uiState.value = if (importResult.isSuccess) {
+                        ImportUiState.Success
+                    } else {
+                        ImportUiState.Error(
+                            importResult.exceptionOrNull()?.message
+                                ?: "import_error_xtream_unknown"
+                        )
+                    }
                 }
-            }
-
-            val contentResult = withContext(Dispatchers.IO) {
-                when (selectedSourceType) {
-                    PlaylistSourceType.URL -> contentFetcher.fetchFromUrl(trimmedUrl)
-                    PlaylistSourceType.FILE -> contentFetcher.fetchFromUri(sourceUri)
-                    PlaylistSourceType.XTREAM -> Result.failure(
-                        IOException("import_error_xtream_not_implemented")
-                    )
-                }
-            }
-
-            val content = contentResult.getOrElse { error ->
-                _uiState.value = ImportUiState.Error(
-                    error.message ?: "Kunde inte läsa spellistans innehåll"
-                )
-                return@launch
-            }
-
-            val importResult = withContext(Dispatchers.IO) {
-                when (selectedSourceType) {
-                    PlaylistSourceType.URL, PlaylistSourceType.FILE -> importPlaylistUseCase(
-                        name = trimmedName,
-                        sourceType = selectedSourceType,
-                        sourceUri = sourceUri,
-                        content = content
-                    )
-
-                    PlaylistSourceType.XTREAM -> Result.failure(
-                        IOException("import_error_xtream_not_implemented")
-                    )
-                }
-            }
-
-            _uiState.value = if (importResult.isSuccess) {
-                ImportUiState.Success
-            } else {
-                ImportUiState.Error(
-                    importResult.exceptionOrNull()?.message
-                        ?: "Importen misslyckades"
-                )
             }
         }
     }
@@ -193,7 +281,10 @@ class ImportPlaylistViewModel @Inject constructor(
         name: String,
         sourceType: PlaylistSourceType,
         url: String,
-        fileUri: String?
+        fileUri: String?,
+        serverUrl: String,
+        xtreamUsername: String,
+        xtreamPassword: String
     ): String? {
         if (name.isBlank()) {
             return "import_error_name"
@@ -203,6 +294,15 @@ class ImportPlaylistViewModel @Inject constructor(
         }
         if (sourceType == PlaylistSourceType.FILE && fileUri.isNullOrBlank()) {
             return "import_error_file"
+        }
+        if (sourceType == PlaylistSourceType.XTREAM && serverUrl.isBlank()) {
+            return "import_error_xtream_server_required"
+        }
+        if (sourceType == PlaylistSourceType.XTREAM && xtreamUsername.isBlank()) {
+            return "import_error_xtream_username_required"
+        }
+        if (sourceType == PlaylistSourceType.XTREAM && xtreamPassword.isBlank()) {
+            return "import_error_xtream_password_required"
         }
         return null
     }

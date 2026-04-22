@@ -3,6 +3,7 @@ package com.valladares.iptvplayer.data.playlist
 import com.valladares.iptvplayer.data.playlist.model.Channel
 import com.valladares.iptvplayer.data.playlist.model.Playlist
 import com.valladares.iptvplayer.data.playlist.model.PlaylistSourceType
+import com.valladares.iptvplayer.data.xtream.model.XtreamCredentials
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -29,6 +30,14 @@ interface PlaylistRepository {
         sourceType: PlaylistSourceType,
         sourceUri: String,
         content: String
+    ): Result<String>
+
+    /**
+     * Imports an Xtream playlist, returning the created playlist id on success.
+     */
+    suspend fun importXtreamPlaylist(
+        name: String,
+        credentials: XtreamCredentials
     ): Result<String>
 
     /**
