@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">IPTVPlayer</string>
-    <string name="placeholder_screen_title">IPTVplayer – Fas 1 MVP</string>
+    <string name="home_title">IPTVplayer</string>
+    <string name="home_empty_title">Inga spellistor ännu</string>
+    <string name="home_empty_subtitle">Tryck på + för att importera</string>
+    <string name="home_fab_import">Importera spellista</string>
+    <string name="home_playlist_source">Källa: %1$s</string>
+    <string name="channels_title">Kanaler</string>
+    <string name="channels_empty">Inga kanaler i denna spellista</string>
+    <string name="player_back">Gå tillbaka från uppspelning</string>
+    <string name="back">Gå tillbaka</string>
 </resources>

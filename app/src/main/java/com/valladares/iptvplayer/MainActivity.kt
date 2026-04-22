@@ -8,7 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.valladares.iptvplayer.feature.player.PlayerScreen
+import androidx.navigation.compose.rememberNavController
+import com.valladares.iptvplayer.navigation.IPTVNavHost
 import com.valladares.iptvplayer.ui.theme.IPTVPlayerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -22,8 +23,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IPTVPlayerTheme {
+                val navController = rememberNavController()
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    PlayerScreen(modifier = Modifier.padding(innerPadding))
+                    IPTVNavHost(
+                        navController = navController,
+                        modifier = Modifier.padding(innerPadding)
+                    )
                 }
             }
         }
