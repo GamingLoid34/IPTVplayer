@@ -80,6 +80,7 @@ fun ImportPlaylistScreen(
     val isFormValid = name.isNotBlank() && when (sourceType) {
         PlaylistSourceType.URL -> urlInput.isNotBlank()
         PlaylistSourceType.FILE -> !fileUri.isNullOrBlank()
+        PlaylistSourceType.XTREAM -> false
     }
 
     Scaffold(
@@ -121,38 +122,50 @@ fun ImportPlaylistScreen(
                 onSelect = viewModel::onSourceTypeChange
             )
 
-            if (sourceType == PlaylistSourceType.URL) {
-                OutlinedTextField(
-                    value = urlInput,
-                    onValueChange = viewModel::onUrlChange,
-                    label = { Text(text = stringResource(R.string.import_url_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = !isLoading
-                )
-            } else {
-                Button(
-                    onClick = {
-                        filePicker.launch(
-                            arrayOf(
-                                "audio/x-mpegurl",
-                                "application/x-mpegurl",
-                                "audio/mpegurl",
-                                "application/vnd.apple.mpegurl",
-                                "text/plain",
-                                "*/*"
-                            )
-                        )
-                    },
-                    enabled = !isLoading
-                ) {
-                    Text(text = stringResource(R.string.import_select_file))
+            when (sourceType) {
+                PlaylistSourceType.URL -> {
+                    OutlinedTextField(
+                        value = urlInput,
+                        onValueChange = viewModel::onUrlChange,
+                        label = { Text(text = stringResource(R.string.import_url_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !isLoading
+                    )
                 }
-                if (!fileUri.isNullOrBlank()) {
-                    val selectedFileUri = fileUri.orEmpty()
+
+                PlaylistSourceType.FILE -> {
+                    Button(
+                        onClick = {
+                            filePicker.launch(
+                                arrayOf(
+                                    "audio/x-mpegurl",
+                                    "application/x-mpegurl",
+                                    "audio/mpegurl",
+                                    "application/vnd.apple.mpegurl",
+                                    "text/plain",
+                                    "*/*"
+                                )
+                            )
+                        },
+                        enabled = !isLoading
+                    ) {
+                        Text(text = stringResource(R.string.import_select_file))
+                    }
+                    if (!fileUri.isNullOrBlank()) {
+                        val selectedFileUri = fileUri.orEmpty()
+                        Text(
+                            text = Uri.parse(selectedFileUri).lastPathSegment ?: selectedFileUri,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                PlaylistSourceType.XTREAM -> {
                     Text(
-                        text = Uri.parse(selectedFileUri).lastPathSegment ?: selectedFileUri,
-                        style = MaterialTheme.typography.bodySmall,
+                        text = stringResource(R.string.import_error_xtream_not_implemented),
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -223,5 +236,6 @@ private fun String.toErrorMessage(context: android.content.Context): String = wh
     "import_error_name" -> context.getString(R.string.import_error_name)
     "import_error_url" -> context.getString(R.string.import_error_url)
     "import_error_file" -> context.getString(R.string.import_error_file)
+    "import_error_xtream_not_implemented" -> context.getString(R.string.import_error_xtream_not_implemented)
     else -> this
 }

@@ -6,6 +6,7 @@ import com.valladares.iptvplayer.core.network.PlaylistContentFetcher
 import com.valladares.iptvplayer.data.playlist.model.PlaylistSourceType
 import com.valladares.iptvplayer.domain.usecase.ImportPlaylistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,12 +140,19 @@ class ImportPlaylistViewModel @Inject constructor(
             val sourceUri = when (selectedSourceType) {
                 PlaylistSourceType.URL -> trimmedUrl
                 PlaylistSourceType.FILE -> selectedFileUri.orEmpty()
+                PlaylistSourceType.XTREAM -> {
+                    _uiState.value = ImportUiState.Error("import_error_xtream_not_implemented")
+                    return@launch
+                }
             }
 
             val contentResult = withContext(Dispatchers.IO) {
                 when (selectedSourceType) {
                     PlaylistSourceType.URL -> contentFetcher.fetchFromUrl(trimmedUrl)
                     PlaylistSourceType.FILE -> contentFetcher.fetchFromUri(sourceUri)
+                    PlaylistSourceType.XTREAM -> Result.failure(
+                        IOException("import_error_xtream_not_implemented")
+                    )
                 }
             }
 
@@ -156,12 +164,18 @@ class ImportPlaylistViewModel @Inject constructor(
             }
 
             val importResult = withContext(Dispatchers.IO) {
-                importPlaylistUseCase(
-                    name = trimmedName,
-                    sourceType = selectedSourceType,
-                    sourceUri = sourceUri,
-                    content = content
-                )
+                when (selectedSourceType) {
+                    PlaylistSourceType.URL, PlaylistSourceType.FILE -> importPlaylistUseCase(
+                        name = trimmedName,
+                        sourceType = selectedSourceType,
+                        sourceUri = sourceUri,
+                        content = content
+                    )
+
+                    PlaylistSourceType.XTREAM -> Result.failure(
+                        IOException("import_error_xtream_not_implemented")
+                    )
+                }
             }
 
             _uiState.value = if (importResult.isSuccess) {

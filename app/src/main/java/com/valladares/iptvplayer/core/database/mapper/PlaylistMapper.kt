@@ -14,7 +14,9 @@ fun PlaylistEntity.toDomain(): Playlist = Playlist(
         .getOrElse { PlaylistSourceType.URL },
     sourceUri = sourceUri,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    xtreamServerUrl = xtreamServerUrl,
+    xtreamUsername = xtreamUsername
 )
 
 /**
@@ -26,5 +28,8 @@ fun Playlist.toEntity(): PlaylistEntity = PlaylistEntity(
     sourceType = sourceType.name,
     sourceUri = sourceUri,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    xtreamServerUrl = xtreamServerUrl,
+    xtreamUsername = xtreamUsername,
+    xtreamPassword = null
 )

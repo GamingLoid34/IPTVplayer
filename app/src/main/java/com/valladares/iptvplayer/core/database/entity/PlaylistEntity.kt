@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 /**
  * Room entity for a persisted M3U playlist.
  *
- * [sourceType] is stored as the enum name (`URL` or `FILE`) for stable serialization.
+ * [sourceType] is stored as enum name (`URL`, `FILE`, `XTREAM`) for stable serialization.
  */
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
@@ -16,5 +16,8 @@ data class PlaylistEntity(
     val sourceType: String,
     val sourceUri: String,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val xtreamServerUrl: String? = null,
+    val xtreamUsername: String? = null,
+    val xtreamPassword: String? = null
 )

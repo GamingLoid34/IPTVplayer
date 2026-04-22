@@ -17,6 +17,7 @@
     <string name="import_error_name">Ange ett namn för spellistan</string>
     <string name="import_error_url">Ange en URL för import</string>
     <string name="import_error_file">Välj en fil att importera</string>
+    <string name="import_error_xtream_not_implemented">Xtream stöds inte ännu — kommer i nästa steg</string>
     <string name="import_loading">Importerar spellista...</string>
     <string name="import_success">Spellistan importerades</string>
     <string name="import_retry">Försök igen</string>

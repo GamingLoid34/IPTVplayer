@@ -4,7 +4,14 @@ import android.content.Context
 import androidx.room.Room
 import com.valladares.iptvplayer.core.database.IPTVDatabase
 import com.valladares.iptvplayer.core.database.dao.ChannelDao
+import com.valladares.iptvplayer.core.database.dao.EpisodeDao
+import com.valladares.iptvplayer.core.database.dao.LiveCategoryDao
+import com.valladares.iptvplayer.core.database.dao.LiveChannelDao
 import com.valladares.iptvplayer.core.database.dao.PlaylistDao
+import com.valladares.iptvplayer.core.database.dao.SeriesCategoryDao
+import com.valladares.iptvplayer.core.database.dao.SeriesDao
+import com.valladares.iptvplayer.core.database.dao.VodCategoryDao
+import com.valladares.iptvplayer.core.database.dao.VodDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,4 +54,46 @@ object DatabaseModule {
      */
     @Provides
     fun provideChannelDao(db: IPTVDatabase): ChannelDao = db.channelDao()
+
+    /**
+     * Provides the live category [LiveCategoryDao].
+     */
+    @Provides
+    fun provideLiveCategoryDao(db: IPTVDatabase): LiveCategoryDao = db.liveCategoryDao()
+
+    /**
+     * Provides the live channel [LiveChannelDao].
+     */
+    @Provides
+    fun provideLiveChannelDao(db: IPTVDatabase): LiveChannelDao = db.liveChannelDao()
+
+    /**
+     * Provides the VOD category [VodCategoryDao].
+     */
+    @Provides
+    fun provideVodCategoryDao(db: IPTVDatabase): VodCategoryDao = db.vodCategoryDao()
+
+    /**
+     * Provides the VOD [VodDao].
+     */
+    @Provides
+    fun provideVodDao(db: IPTVDatabase): VodDao = db.vodDao()
+
+    /**
+     * Provides the series category [SeriesCategoryDao].
+     */
+    @Provides
+    fun provideSeriesCategoryDao(db: IPTVDatabase): SeriesCategoryDao = db.seriesCategoryDao()
+
+    /**
+     * Provides the series [SeriesDao].
+     */
+    @Provides
+    fun provideSeriesDao(db: IPTVDatabase): SeriesDao = db.seriesDao()
+
+    /**
+     * Provides the episode [EpisodeDao].
+     */
+    @Provides
+    fun provideEpisodeDao(db: IPTVDatabase): EpisodeDao = db.episodeDao()
 }

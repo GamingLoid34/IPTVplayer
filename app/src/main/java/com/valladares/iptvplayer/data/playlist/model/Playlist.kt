@@ -12,7 +12,12 @@ enum class PlaylistSourceType {
     /**
      * Local file path or content-uri style reference for on-device file.
      */
-    FILE
+    FILE,
+
+    /**
+     * Xtream Codes credentials-based source.
+     */
+    XTREAM
 }
 
 /**
@@ -24,5 +29,7 @@ data class Playlist(
     val sourceType: PlaylistSourceType,
     val sourceUri: String,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val xtreamServerUrl: String? = null,
+    val xtreamUsername: String? = null
 )
