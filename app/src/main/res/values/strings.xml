@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">IPTVPlayer</string>
+    <string name="placeholder_screen_title">IPTVplayer – Fas 1 MVP</string>
 </resources>
