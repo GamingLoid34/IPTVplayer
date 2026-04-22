@@ -18,7 +18,9 @@ data class XtreamSeriesDto(
     val genre: String? = null,
     @SerialName("releaseDate") val releaseDate: String? = null,
     @SerialName("last_modified") val lastModified: String? = null,
+    @Serializable(with = FlexibleStringSerializer::class)
     val rating: String? = null,
+    @Serializable(with = FlexibleDoubleSerializer::class)
     @SerialName("rating_5based") val rating5Based: Double? = null,
     @SerialName("category_id") val categoryId: String? = null
 )

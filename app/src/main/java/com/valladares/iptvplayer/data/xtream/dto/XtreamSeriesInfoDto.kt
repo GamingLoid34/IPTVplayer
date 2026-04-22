@@ -64,6 +64,8 @@ data class XtreamEpisodeInfoDto(
     @SerialName("movie_image") val movieImage: String? = null,
     val plot: String? = null,
     val duration: String? = null,
+    @Serializable(with = FlexibleIntSerializer::class)
     @SerialName("duration_secs") val durationSecs: Int? = null,
+    @Serializable(with = FlexibleDoubleSerializer::class)
     val rating: Double? = null
 )

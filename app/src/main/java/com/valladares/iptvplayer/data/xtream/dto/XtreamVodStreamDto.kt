@@ -13,7 +13,9 @@ data class XtreamVodStreamDto(
     @SerialName("stream_type") val streamType: String? = null,
     @SerialName("stream_id") val streamId: Int,
     @SerialName("stream_icon") val streamIcon: String? = null,
+    @Serializable(with = FlexibleStringSerializer::class)
     val rating: String? = null,
+    @Serializable(with = FlexibleDoubleSerializer::class)
     @SerialName("rating_5based") val rating5Based: Double? = null,
     val added: String? = null,
     @SerialName("category_id") val categoryId: String? = null,

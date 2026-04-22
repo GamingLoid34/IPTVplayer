@@ -10,5 +10,6 @@ import kotlinx.serialization.Serializable
 data class XtreamCategoryDto(
     @SerialName("category_id") val categoryId: String,
     @SerialName("category_name") val categoryName: String,
+    @Serializable(with = FlexibleIntSerializer::class)
     @SerialName("parent_id") val parentId: Int? = null
 )
