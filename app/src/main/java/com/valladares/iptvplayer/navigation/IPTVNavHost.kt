@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.valladares.iptvplayer.feature.channels.ChannelListScreen
 import com.valladares.iptvplayer.feature.home.HomeScreen
+import com.valladares.iptvplayer.feature.importplaylist.ImportPlaylistScreen
 import com.valladares.iptvplayer.feature.player.PlayerScreen
 
 /**
@@ -28,12 +29,19 @@ fun IPTVNavHost(
     ) {
         composable(NavDestination.Home.route) {
             HomeScreen(
-                onImportClick = { /* Fas 2c: import flow */ },
+                onImportClick = { navController.navigate(NavDestination.Import.route) },
                 onPlaylistClick = { playlistId: String ->
                     navController.navigate(
                         NavDestination.Channels.createRoute(playlistId)
                     )
                 },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        composable(NavDestination.Import.route) {
+            ImportPlaylistScreen(
+                onDone = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
                 modifier = Modifier.fillMaxSize()
             )
         }

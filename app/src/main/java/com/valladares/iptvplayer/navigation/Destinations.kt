@@ -31,4 +31,9 @@ sealed class NavDestination(val route: String) {
         fun createRoute(streamUrl: String): String =
             "player/${Uri.encode(streamUrl)}"
     }
+
+    /**
+     * Import screen for adding a playlist via URL or file.
+     */
+    data object Import : NavDestination("import")
 }
