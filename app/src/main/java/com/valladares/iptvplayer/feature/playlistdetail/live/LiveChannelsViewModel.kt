@@ -15,12 +15,17 @@ import com.valladares.iptvplayer.data.xtream.model.XtreamStreamUrls
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -29,7 +34,7 @@ import kotlinx.coroutines.launch
 /**
  * Exposes live channels for one playlist, grouped by Xtream category for the live tab.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class LiveChannelsViewModel @Inject constructor(
     private val liveRepository: LiveRepository,
@@ -46,6 +51,10 @@ class LiveChannelsViewModel @Inject constructor(
     private val playlistIdFlow: MutableStateFlow<String?> = MutableStateFlow(null)
     val searchQuery: MutableStateFlow<String> = MutableStateFlow("")
     val selectedCountry: MutableStateFlow<String?> = MutableStateFlow(null)
+    private val debouncedSearchQuery = searchQuery
+        .debounce(150)
+        .map { it.trim() }
+        .distinctUntilChanged()
 
     val availableCountries: StateFlow<List<String>> = playlistIdFlow
         .flatMapLatest { id ->
@@ -115,9 +124,9 @@ class LiveChannelsViewModel @Inject constructor(
     private val channelsFlow = combine(
         playlistIdFlow,
         selectedCountry,
-        searchQuery
+        debouncedSearchQuery
     ) { id, country, query ->
-        Triple(id, country, query.trim())
+        Triple(id, country, query)
     }.flatMapLatest { (id, country, query) ->
         if (id == null) {
             flowOf(emptyList())
@@ -128,7 +137,17 @@ class LiveChannelsViewModel @Inject constructor(
                 searchQuery = query.ifBlank { null }
             )
         }
-    }
+    }.flowOn(Dispatchers.Default)
+
+    private val groupedChannelsFlow = combine(
+        categoriesFlow,
+        channelsFlow
+    ) { categories, channels ->
+        GroupedChannels(
+            categories = categories,
+            byCategory = channels.groupBy { it.categoryExternalId }
+        )
+    }.flowOn(Dispatchers.Default)
 
     private val favoritesMetaFlow = combine(
         favorites,
@@ -144,27 +163,24 @@ class LiveChannelsViewModel @Inject constructor(
                 flowOf(LiveChannelsUiState.Loading)
             } else {
                 combine(
-                    searchQuery,
+                    debouncedSearchQuery,
                     selectedCountry,
-                    categoriesFlow,
-                    channelsFlow,
+                    groupedChannelsFlow,
                     favoritesMetaFlow
                 ) { query: String,
                     country: String?,
-                    categories: List<XtreamCategory>,
-                    channels: List<LiveChannel>,
+                    grouped: GroupedChannels,
                     meta: Triple<List<LiveChannel>, List<LiveChannel>, Set<Long>> ->
                     buildUiState(
-                        query = query.trim(),
+                        query = query,
                         selectedCountry = country,
-                        categories = categories,
-                        channels = channels,
+                        groupedChannels = grouped,
                         favorites = meta.first,
                         recent = meta.second,
                         favoriteIds = meta.third,
                         otherCategoryLabel = appContext.getString(R.string.live_category_other)
                     )
-                }
+                }.flowOn(Dispatchers.Default)
             }
         }
         .stateIn(
@@ -226,13 +242,15 @@ class LiveChannelsViewModel @Inject constructor(
     private fun buildUiState(
         query: String,
         selectedCountry: String?,
-        categories: List<XtreamCategory>,
-        channels: List<LiveChannel>,
+        groupedChannels: GroupedChannels,
         favorites: List<LiveChannel>,
         recent: List<LiveChannel>,
         favoriteIds: Set<Long>,
         otherCategoryLabel: String
     ): LiveChannelsUiState {
+        val categories = groupedChannels.categories
+        val byCategory = groupedChannels.byCategory
+        val channels = byCategory.values.flatten()
         if (channels.isEmpty()) {
             val message = when {
                 query.isNotBlank() -> appContext.getString(R.string.live_empty_search, query)
@@ -295,8 +313,8 @@ class LiveChannelsViewModel @Inject constructor(
 
         val byExternalId: Map<String, XtreamCategory> = categories.associateBy { it.externalId }
         for (category in categories) {
-            val inCategory = channels
-                .filter { it.categoryExternalId == category.externalId }
+            val inCategory = byCategory[category.externalId]
+                .orEmpty()
                 .sortedBy { it.name }
             if (inCategory.isNotEmpty()) {
                 items.add(
@@ -317,11 +335,10 @@ class LiveChannelsViewModel @Inject constructor(
             }
         }
         val knownIds = byExternalId.keys
-        val other = channels
-            .filter { ch ->
-                val ext = ch.categoryExternalId
-                ext == null || ext !in knownIds
-            }
+        val other = channels.filter { ch ->
+            val ext = ch.categoryExternalId
+            ext == null || ext !in knownIds
+        }
             .sortedBy { it.name }
         if (other.isNotEmpty()) {
             items.add(LiveChannelsListItem.Header(title = otherCategoryLabel))
@@ -382,4 +399,9 @@ data class PlaybackRequest(
     val referer: String?,
     val playlistId: String,
     val liveChannelId: Long
+)
+
+private data class GroupedChannels(
+    val categories: List<XtreamCategory>,
+    val byCategory: Map<String?, List<LiveChannel>>
 )
