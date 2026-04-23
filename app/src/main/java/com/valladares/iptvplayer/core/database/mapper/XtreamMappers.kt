@@ -75,18 +75,21 @@ fun XtreamLiveStreamDto.toEntity(
 /**
  * Maps Xtream VOD stream DTO to entity.
  */
-fun XtreamVodStreamDto.toEntity(playlistId: String, sortOrder: Int): VodEntity = VodEntity(
-    playlistId = playlistId,
-    streamId = streamId,
-    name = name,
-    streamIcon = streamIcon,
-    categoryExternalId = categoryId,
-    containerExtension = containerExtension,
-    rating = rating,
-    rating5Based = rating5Based,
-    added = added,
-    sortOrder = sortOrder
-)
+fun XtreamVodStreamDto.toEntity(playlistId: String, sortOrder: Int): VodEntity? {
+    val resolvedStreamId = streamId ?: return null
+    return VodEntity(
+        playlistId = playlistId,
+        streamId = resolvedStreamId,
+        name = name?.takeIf { it.isNotBlank() } ?: "Okänd film",
+        streamIcon = streamIcon,
+        categoryExternalId = categoryId,
+        containerExtension = containerExtension,
+        rating = rating,
+        rating5Based = rating5Based,
+        added = added,
+        sortOrder = sortOrder
+    )
+}
 
 /**
  * Maps Xtream series DTO to entity.

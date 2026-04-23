@@ -398,7 +398,8 @@ data class PlaybackRequest(
     val userAgent: String,
     val referer: String?,
     val playlistId: String,
-    val liveChannelId: Long
+    val liveChannelId: Long?,
+    val subtitles: List<androidx.media3.common.MediaItem.SubtitleConfiguration>? = null
 )
 
 private data class GroupedChannels(

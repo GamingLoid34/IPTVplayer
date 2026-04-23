@@ -80,7 +80,7 @@ class XtreamSyncService @Inject constructor(
                     password = credentials.password
                 ).mapIndexed { index, dto ->
                     dto.toEntity(playlistId, index)
-                }
+                }.filterNotNull()
                 vodCategoryDao.replaceForPlaylist(playlistId, categories)
                 vodDao.replaceForPlaylist(playlistId, items)
             }

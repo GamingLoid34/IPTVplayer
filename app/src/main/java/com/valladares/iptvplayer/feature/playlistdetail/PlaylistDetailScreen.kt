@@ -45,6 +45,8 @@ import com.valladares.iptvplayer.R
 import com.valladares.iptvplayer.feature.playlistdetail.live.LiveChannelsTab
 import com.valladares.iptvplayer.feature.playlistdetail.live.LiveChannelsViewModel
 import com.valladares.iptvplayer.feature.playlistdetail.live.PlaybackRequest
+import com.valladares.iptvplayer.feature.playlistdetail.series.SeriesTab
+import com.valladares.iptvplayer.feature.playlistdetail.vod.VodTab
 import kotlinx.coroutines.launch
 
 /**
@@ -176,11 +178,15 @@ fun PlaylistDetailScreen(
                         viewModel = liveViewModel,
                         modifier = Modifier.fillMaxSize()
                     )
-                    1 -> ComingSoonTab(
-                        label = stringResource(R.string.tab_coming_soon_vod)
+                    1 -> VodTab(
+                        playlistId = viewModel.playlistId,
+                        onItemClick = onChannelClick,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    else -> ComingSoonTab(
-                        label = stringResource(R.string.tab_coming_soon_series)
+                    else -> SeriesTab(
+                        playlistId = viewModel.playlistId,
+                        onItemClick = onChannelClick,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }

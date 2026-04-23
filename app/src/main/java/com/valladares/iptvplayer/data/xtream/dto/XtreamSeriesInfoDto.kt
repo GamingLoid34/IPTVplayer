@@ -67,5 +67,16 @@ data class XtreamEpisodeInfoDto(
     @Serializable(with = FlexibleIntSerializer::class)
     @SerialName("duration_secs") val durationSecs: Int? = null,
     @Serializable(with = FlexibleDoubleSerializer::class)
-    val rating: Double? = null
+    val rating: Double? = null,
+    val subtitles: List<XtreamSubtitleDto>? = null
+)
+
+/**
+ * Subtitle track from Xtream (VOD/Series info).
+ */
+@Serializable
+data class XtreamSubtitleDto(
+    val id: String? = null,
+    val lang: String? = null,
+    val url: String? = null
 )

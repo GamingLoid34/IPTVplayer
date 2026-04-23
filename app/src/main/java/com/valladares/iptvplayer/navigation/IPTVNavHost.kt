@@ -70,7 +70,8 @@ fun IPTVNavHost(
                             userAgent = request.userAgent,
                             referer = request.referer,
                             playlistId = request.playlistId,
-                            liveChannelId = request.liveChannelId
+                            liveChannelId = request.liveChannelId,
+                            subtitles = request.subtitles
                         )
                     )
                 },
@@ -126,6 +127,10 @@ fun IPTVNavHost(
                     defaultValue = ""
                 },
                 navArgument(NavDestination.Player.ARG_LIVE_CHANNEL_ID) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument(NavDestination.Player.ARG_SUBTITLES) {
                     type = NavType.StringType
                     defaultValue = ""
                 }

@@ -133,8 +133,10 @@ class PlaylistRepositoryImpl @Inject constructor(
                         xtreamPassword = credentials.password
                     )
                     playlistDao.insert(entity)
-                    // Sync error should not block successful Xtream import if credentials are valid.
+                    // Sync errors should not block successful Xtream import if credentials are valid.
                     xtreamSyncService.syncLive(playlistId, credentials)
+                    xtreamSyncService.syncVod(playlistId, credentials)
+                    xtreamSyncService.syncSeries(playlistId, credentials)
                     Result.success(playlistId)
                 }
             }

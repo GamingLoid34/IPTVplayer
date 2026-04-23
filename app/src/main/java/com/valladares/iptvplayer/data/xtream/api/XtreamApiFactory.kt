@@ -1,12 +1,11 @@
 package com.valladares.iptvplayer.data.xtream.api
 
+import com.valladares.iptvplayer.core.network.StreamingJsonConverterFactory
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 /**
  * Creates [XtreamApi] instances for dynamic server URLs.
@@ -26,7 +25,7 @@ class XtreamApiFactory @Inject constructor(
         val retrofit = Retrofit.Builder()
             .baseUrl(normalizedUrl)
             .client(okHttpClient)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .addConverterFactory(StreamingJsonConverterFactory(json))
             .build()
         return retrofit.create(XtreamApi::class.java)
     }

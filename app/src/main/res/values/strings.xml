@@ -40,6 +40,8 @@
     <string name="import_success">Spellistan importerades</string>
     <string name="import_retry">Försök igen</string>
     <string name="player_back">Gå tillbaka från uppspelning</string>
+    <string name="player_fullscreen_enable">Aktivera helskärm</string>
+    <string name="player_fullscreen_disable">Inaktivera helskärm</string>
     <string name="back">Gå tillbaka</string>
     <string name="playlist_detail_tab_live">Live</string>
     <string name="playlist_detail_tab_vod">Filmer</string>

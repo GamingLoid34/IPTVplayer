@@ -4,6 +4,8 @@ import com.valladares.iptvplayer.BuildConfig
 import com.valladares.iptvplayer.core.common.AppConstants
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcher
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcherImpl
+import com.valladares.iptvplayer.data.xtream.api.XtreamApi
+import com.valladares.iptvplayer.data.xtream.api.XtreamApiFactory
 import com.valladares.iptvplayer.data.xtream.model.XtreamStreamUrls
 import dagger.Binds
 import dagger.Module
@@ -15,6 +17,7 @@ import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
 
 /**
  * Provides network dependencies used by playlist import.

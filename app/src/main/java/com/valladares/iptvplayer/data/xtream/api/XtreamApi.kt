@@ -5,6 +5,7 @@ import com.valladares.iptvplayer.data.xtream.dto.XtreamCategoryDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamLiveStreamDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamSeriesDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamSeriesInfoDto
+import com.valladares.iptvplayer.data.xtream.dto.XtreamVodInfoDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamVodStreamDto
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -61,6 +62,17 @@ interface XtreamApi {
         @Query("password") password: String,
         @Query("action") action: String = "get_vod_streams"
     ): List<XtreamVodStreamDto>
+
+    /**
+     * Returns VOD detail (including subtitles) for a specific [vodId].
+     */
+    @GET("player_api.php")
+    suspend fun getVodInfo(
+        @Query("username") username: String,
+        @Query("password") password: String,
+        @Query("vod_id") vodId: Int,
+        @Query("action") action: String = "get_vod_info"
+    ): XtreamVodInfoDto
 
     /**
      * Returns series categories.
