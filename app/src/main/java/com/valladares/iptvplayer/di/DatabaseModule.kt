@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.valladares.iptvplayer.core.database.IPTVDatabase
 import com.valladares.iptvplayer.core.database.dao.ChannelDao
 import com.valladares.iptvplayer.core.database.dao.EpisodeDao
+import com.valladares.iptvplayer.core.database.dao.FavoriteChannelDao
 import com.valladares.iptvplayer.core.database.dao.LiveCategoryDao
 import com.valladares.iptvplayer.core.database.dao.LiveChannelDao
 import com.valladares.iptvplayer.core.database.dao.PlaylistDao
@@ -12,6 +13,7 @@ import com.valladares.iptvplayer.core.database.dao.SeriesCategoryDao
 import com.valladares.iptvplayer.core.database.dao.SeriesDao
 import com.valladares.iptvplayer.core.database.dao.VodCategoryDao
 import com.valladares.iptvplayer.core.database.dao.VodDao
+import com.valladares.iptvplayer.core.database.dao.WatchHistoryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -96,4 +98,16 @@ object DatabaseModule {
      */
     @Provides
     fun provideEpisodeDao(db: IPTVDatabase): EpisodeDao = db.episodeDao()
+
+    /**
+     * Provides the favorites [FavoriteChannelDao].
+     */
+    @Provides
+    fun provideFavoriteChannelDao(db: IPTVDatabase): FavoriteChannelDao = db.favoriteChannelDao()
+
+    /**
+     * Provides the history [WatchHistoryDao].
+     */
+    @Provides
+    fun provideWatchHistoryDao(db: IPTVDatabase): WatchHistoryDao = db.watchHistoryDao()
 }

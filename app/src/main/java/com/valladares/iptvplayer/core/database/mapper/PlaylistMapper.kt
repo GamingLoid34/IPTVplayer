@@ -15,6 +15,8 @@ fun PlaylistEntity.toDomain(): Playlist = Playlist(
     sourceUri = sourceUri,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    userAgent = userAgent,
+    referer = referer,
     xtreamServerUrl = xtreamServerUrl,
     xtreamUsername = xtreamUsername
 )
@@ -29,6 +31,8 @@ fun Playlist.toEntity(): PlaylistEntity = PlaylistEntity(
     sourceUri = sourceUri,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    userAgent = userAgent,
+    referer = referer,
     xtreamServerUrl = xtreamServerUrl,
     xtreamUsername = xtreamUsername,
     xtreamPassword = null

@@ -11,7 +11,12 @@ object XtreamStreamUrls {
         credentials: XtreamCredentials,
         streamId: Int,
         extension: String = "m3u8"
-    ): String = "${credentials.serverUrl}/live/${credentials.username}/${credentials.password}/$streamId.$extension"
+    ): String {
+        val url =
+            "${credentials.serverUrl}/live/${credentials.username}/${credentials.password}/$streamId.$extension"
+        android.util.Log.d("XtreamStreamUrls", "Built live stream URL: $url")
+        return url
+    }
 
     /**
      * Creates VOD stream URL.

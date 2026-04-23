@@ -28,6 +28,22 @@ class LiveRepositoryImpl @Inject constructor(
             rows.map { it.toDomain() }
         }
 
+    override fun observeAvailableCountries(playlistId: String): Flow<List<String>> =
+        liveChannelDao.observeAvailableCountries(playlistId)
+
+    override fun observeChannelsFiltered(
+        playlistId: String,
+        countryCode: String?,
+        searchQuery: String?
+    ): Flow<List<LiveChannel>> =
+        liveChannelDao.observeChannelsFiltered(
+            playlistId = playlistId,
+            countryCode = countryCode,
+            searchQuery = searchQuery
+        ).map { rows ->
+            rows.map { it.toDomain() }
+        }
+
     override fun observeChannelsByCategory(
         playlistId: String,
         categoryExternalId: String?

@@ -48,11 +48,16 @@ class XtreamSyncService @Inject constructor(
                     username = credentials.username,
                     password = credentials.password
                 ).map { it.toLiveCategoryEntity(playlistId) }
+                val categoriesById: Map<String, String> = categories.associate { it.externalId to it.name }
                 val channels = api.getLiveStreams(
                     username = credentials.username,
                     password = credentials.password
                 ).mapIndexed { index, dto ->
-                    dto.toEntity(playlistId, index)
+                    dto.toEntity(
+                        playlistId = playlistId,
+                        sortOrder = index,
+                        categoryName = categoriesById[dto.categoryId]
+                    )
                 }
                 liveCategoryDao.replaceForPlaylist(playlistId, categories)
                 liveChannelDao.replaceForPlaylist(playlistId, channels)

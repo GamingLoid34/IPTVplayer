@@ -17,6 +17,16 @@ data class PlaylistEntity(
     val sourceUri: String,
     val createdAt: Long,
     val updatedAt: Long,
+    /**
+     * Valfria HTTP-headers för stream-uppspelning. Vissa IPTV-servrar blockerar specifika
+     * User-Agents med HTTP 458. Null = använd AppConstants.DEFAULT_USER_AGENT.
+     */
+    val userAgent: String? = null,
+    /**
+     * Valfria HTTP-headers för stream-uppspelning. Vissa IPTV-servrar blockerar specifika
+     * User-Agents med HTTP 458. Null = använd AppConstants.DEFAULT_USER_AGENT.
+     */
+    val referer: String? = null,
     val xtreamServerUrl: String? = null,
     val xtreamUsername: String? = null,
     val xtreamPassword: String? = null

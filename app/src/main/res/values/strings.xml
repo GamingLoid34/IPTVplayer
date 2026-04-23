@@ -49,4 +49,25 @@
     <string name="live_category_other">Övrigt</string>
     <string name="live_tab_empty">Inga kanaler i denna spellista</string>
     <string name="live_tab_loading">Laddar kanaler…</string>
+    <string name="playlist_settings_title">Inställningar för %1$s</string>
+    <string name="playlist_settings_user_agent_section">User-Agent</string>
+    <string name="playlist_settings_user_agent_hint">Lämna tomt för standard</string>
+    <string name="playlist_settings_referer_section">Referer</string>
+    <string name="playlist_settings_referer_hint">Ofta tom. Vissa servrar kräver en Referer-URL.</string>
+    <string name="playlist_settings_save">Spara</string>
+    <string name="playlist_settings_saved">Inställningarna sparade</string>
+    <string name="playlist_settings_save_error">Kunde inte spara inställningarna</string>
+    <string name="playlist_settings_preset_custom">Custom</string>
+    <string name="live_search_placeholder">Sök kanal...</string>
+    <string name="live_search_clear">Rensa sökning</string>
+    <string name="live_filter_title">Filtrera efter land</string>
+    <string name="live_filter_country_all">Alla</string>
+    <string name="live_filter_country_unknown">Okänt</string>
+    <string name="live_section_favorites">★ Favoriter</string>
+    <string name="live_section_recent">🕐 Nyligen</string>
+    <string name="live_empty_search">Inga träffar för "%1$s"</string>
+    <string name="live_empty_country">Inga kanaler från %1$s</string>
+    <string name="live_clear_filters">Rensa filter</string>
+    <string name="live_toggle_favorite_add">Lägg till som favorit</string>
+    <string name="live_toggle_favorite_remove">Ta bort från favoriter</string>
 </resources>

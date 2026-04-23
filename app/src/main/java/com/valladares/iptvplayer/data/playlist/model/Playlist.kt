@@ -30,6 +30,8 @@ data class Playlist(
     val sourceUri: String,
     val createdAt: Long,
     val updatedAt: Long,
+    val userAgent: String? = null,
+    val referer: String? = null,
     val xtreamServerUrl: String? = null,
     val xtreamUsername: String? = null
 )

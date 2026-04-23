@@ -19,6 +19,20 @@ interface LiveRepository {
     fun observeChannels(playlistId: String): Flow<List<LiveChannel>>
 
     /**
+     * Observes available detected country codes for channels in the playlist.
+     */
+    fun observeAvailableCountries(playlistId: String): Flow<List<String>>
+
+    /**
+     * Observes channels filtered by optional country and search query.
+     */
+    fun observeChannelsFiltered(
+        playlistId: String,
+        countryCode: String?,
+        searchQuery: String?
+    ): Flow<List<LiveChannel>>
+
+    /**
      * Observes channels filtered by [categoryExternalId] (or uncategorized when null).
      */
     fun observeChannelsByCategory(

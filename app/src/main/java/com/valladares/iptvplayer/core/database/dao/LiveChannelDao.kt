@@ -20,6 +20,20 @@ interface LiveChannelDao {
     fun observeByPlaylistId(playlistId: String): Flow<List<LiveChannelEntity>>
 
     /**
+     * Observes distinct non-null country codes available in playlist channels.
+     */
+    @Query(
+        """
+        SELECT DISTINCT detectedCountryCode
+        FROM live_channels
+        WHERE playlistId = :playlistId
+        AND detectedCountryCode IS NOT NULL
+        ORDER BY detectedCountryCode
+        """
+    )
+    fun observeAvailableCountries(playlistId: String): Flow<List<String>>
+
+    /**
      * Observes live channels filtered by category (or uncategorized when null).
      */
     @Query(
@@ -33,6 +47,32 @@ interface LiveChannelDao {
     fun observeByPlaylistAndCategory(
         playlistId: String,
         categoryExternalId: String?
+    ): Flow<List<LiveChannelEntity>>
+
+    /**
+     * Observes channels filtered by optional country and search query.
+     */
+    @Query(
+        """
+        SELECT * FROM live_channels
+        WHERE playlistId = :playlistId
+        AND (
+            :countryCode IS NULL
+            OR (:countryCode = 'UNKNOWN' AND detectedCountryCode IS NULL)
+            OR detectedCountryCode = :countryCode
+        )
+        AND (
+            :searchQuery IS NULL
+            OR TRIM(:searchQuery) = ''
+            OR UPPER(name) LIKE '%' || UPPER(:searchQuery) || '%'
+        )
+        ORDER BY sortOrder ASC
+        """
+    )
+    fun observeChannelsFiltered(
+        playlistId: String,
+        countryCode: String?,
+        searchQuery: String?
     ): Flow<List<LiveChannelEntity>>
 
     /**

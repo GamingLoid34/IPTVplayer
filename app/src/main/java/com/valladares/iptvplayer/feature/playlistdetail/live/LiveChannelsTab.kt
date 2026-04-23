@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,7 +42,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun LiveChannelsTab(
     playlistId: String,
-    onChannelClick: (String) -> Unit,
+    onChannelClick: (PlaybackRequest) -> Unit,
+    onClearFilters: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LiveChannelsViewModel = hiltViewModel()
 ) {
@@ -63,9 +68,10 @@ fun LiveChannelsTab(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(R.string.live_tab_empty),
-                    style = MaterialTheme.typography.bodyLarge
+                EmptyContent(
+                    message = state.message,
+                    showClearFilters = state.showClearFilters,
+                    onClearFilters = onClearFilters
                 )
             }
         }
@@ -74,11 +80,14 @@ fun LiveChannelsTab(
                 items = state.items,
                 onChannelRowClick = { channel: LiveChannel ->
                     scope.launch {
-                        val url = viewModel.buildStreamUrl(channel)
-                        if (url != null) {
-                            onChannelClick(url)
+                        val request = viewModel.buildPlaybackRequest(channel)
+                        if (request != null) {
+                            onChannelClick(request)
                         }
                     }
+                },
+                onToggleFavorite = { channelId ->
+                    viewModel.onToggleFavorite(channelId)
                 },
                 modifier = modifier.fillMaxSize()
             )
@@ -87,9 +96,39 @@ fun LiveChannelsTab(
 }
 
 @Composable
+private fun EmptyContent(
+    message: String,
+    showClearFilters: Boolean,
+    onClearFilters: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.layout.Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            if (showClearFilters) {
+                Button(
+                    onClick = onClearFilters,
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    Text(text = stringResource(R.string.live_clear_filters))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun LiveChannelsList(
     items: List<LiveChannelsListItem>,
     onChannelRowClick: (LiveChannel) -> Unit,
+    onToggleFavorite: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier) {
@@ -98,10 +137,15 @@ private fun LiveChannelsList(
             key = { it.listKey }
         ) { item: LiveChannelsListItem ->
             when (item) {
-                is LiveChannelsListItem.Header -> GroupHeader(title = item.title)
+                is LiveChannelsListItem.Header -> GroupHeader(
+                    title = item.title,
+                    isPseudo = item.isPseudo
+                )
                 is LiveChannelsListItem.Row -> ChannelRow(
                     channel = item.channel,
-                    onClick = { onChannelRowClick(item.channel) }
+                    isFavorite = item.isFavorite,
+                    onClick = { onChannelRowClick(item.channel) },
+                    onToggleFavorite = { onToggleFavorite(item.channel.id) }
                 )
             }
         }
@@ -111,17 +155,26 @@ private fun LiveChannelsList(
 @Composable
 private fun GroupHeader(
     title: String,
+    isPseudo: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = if (isPseudo) {
+            MaterialTheme.colorScheme.tertiaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        }
     ) {
         Text(
             text = title,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (isPseudo) {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
         )
     }
 }
@@ -129,7 +182,9 @@ private fun GroupHeader(
 @Composable
 private fun ChannelRow(
     channel: LiveChannel,
+    isFavorite: Boolean,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ListItem(
@@ -142,6 +197,22 @@ private fun ChannelRow(
             )
         },
         supportingContent = null,
+        trailingContent = {
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) {
+                        Icons.Filled.Star
+                    } else {
+                        Icons.Outlined.StarOutline
+                    },
+                    contentDescription = if (isFavorite) {
+                        stringResource(R.string.live_toggle_favorite_remove)
+                    } else {
+                        stringResource(R.string.live_toggle_favorite_add)
+                    }
+                )
+            }
+        },
         leadingContent = {
             Box(
                 modifier = Modifier.size(40.dp),

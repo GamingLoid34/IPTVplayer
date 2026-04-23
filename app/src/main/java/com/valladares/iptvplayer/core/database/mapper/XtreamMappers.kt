@@ -12,6 +12,7 @@ import com.valladares.iptvplayer.data.xtream.dto.XtreamEpisodeDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamLiveStreamDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamSeriesDto
 import com.valladares.iptvplayer.data.xtream.dto.XtreamVodStreamDto
+import com.valladares.iptvplayer.data.xtream.CountryCodeDetector
 import com.valladares.iptvplayer.data.xtream.model.Episode
 import com.valladares.iptvplayer.data.xtream.model.LiveChannel
 import com.valladares.iptvplayer.data.xtream.model.Series
@@ -51,12 +52,20 @@ fun XtreamCategoryDto.toSeriesCategoryEntity(playlistId: String): SeriesCategory
 /**
  * Maps Xtream live stream DTO to entity.
  */
-fun XtreamLiveStreamDto.toEntity(playlistId: String, sortOrder: Int): LiveChannelEntity = LiveChannelEntity(
+fun XtreamLiveStreamDto.toEntity(
+    playlistId: String,
+    sortOrder: Int,
+    categoryName: String?
+): LiveChannelEntity = LiveChannelEntity(
     playlistId = playlistId,
     streamId = streamId,
     name = name,
     streamIcon = streamIcon,
     categoryExternalId = categoryId,
+    detectedCountryCode = CountryCodeDetector.detect(
+        channelName = name,
+        categoryName = categoryName
+    ),
     epgChannelId = epgChannelId,
     tvArchive = tvArchive,
     tvArchiveDuration = tvArchiveDuration,
@@ -154,6 +163,7 @@ fun LiveChannelEntity.toDomain(): LiveChannel = LiveChannel(
     name = name,
     streamIcon = streamIcon,
     categoryExternalId = categoryExternalId,
+    detectedCountryCode = detectedCountryCode,
     epgChannelId = epgChannelId,
     hasTvArchive = tvArchive == 1,
     tvArchiveDuration = tvArchiveDuration

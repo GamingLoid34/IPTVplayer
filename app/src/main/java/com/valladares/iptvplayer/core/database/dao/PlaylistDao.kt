@@ -43,4 +43,14 @@ interface PlaylistDao {
      */
     @Query("SELECT * FROM playlists WHERE id = :id")
     suspend fun getById(id: String): PlaylistEntity?
+
+    /**
+     * Updates optional playback headers for one playlist.
+     */
+    @Query("UPDATE playlists SET userAgent = :userAgent, referer = :referer WHERE id = :playlistId")
+    suspend fun updatePlaybackHeaders(
+        playlistId: String,
+        userAgent: String?,
+        referer: String?
+    )
 }

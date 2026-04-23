@@ -1,6 +1,7 @@
 package com.valladares.iptvplayer.di
 
 import com.valladares.iptvplayer.BuildConfig
+import com.valladares.iptvplayer.core.common.AppConstants
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcher
 import com.valladares.iptvplayer.core.network.PlaylistContentFetcherImpl
 import com.valladares.iptvplayer.data.xtream.model.XtreamStreamUrls
@@ -30,6 +31,12 @@ object NetworkModule {
         val builder = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", AppConstants.DEFAULT_USER_AGENT)
+                    .build()
+                chain.proceed(request)
+            }
 
         if (BuildConfig.DEBUG) {
             val logging = HttpLoggingInterceptor().apply {

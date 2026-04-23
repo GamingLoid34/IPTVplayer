@@ -10,6 +10,7 @@ data class LiveChannel(
     val name: String,
     val streamIcon: String?,
     val categoryExternalId: String?,
+    val detectedCountryCode: String? = null,
     val epgChannelId: String?,
     val hasTvArchive: Boolean,
     val tvArchiveDuration: Int?

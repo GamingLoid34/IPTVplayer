@@ -28,6 +28,11 @@ data class LiveChannelEntity(
     val name: String,
     val streamIcon: String?,
     val categoryExternalId: String?,
+    /**
+     * ISO 3166-1 alpha-2 landskod (SE, US, GB, ...) detekterad från kanal- eller
+     * kategorinamn vid sync. Null om ingen träff.
+     */
+    val detectedCountryCode: String? = null,
     val epgChannelId: String?,
     val tvArchive: Int?,
     val tvArchiveDuration: Int?,

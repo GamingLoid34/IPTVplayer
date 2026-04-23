@@ -5,7 +5,9 @@ import com.valladares.iptvplayer.core.database.dao.PlaylistDao
 import com.valladares.iptvplayer.core.database.entity.PlaylistEntity
 import com.valladares.iptvplayer.core.database.mapper.toDomain
 import com.valladares.iptvplayer.core.database.mapper.toEntity
+import com.valladares.iptvplayer.core.common.AppConstants
 import com.valladares.iptvplayer.data.playlist.model.Channel
+import com.valladares.iptvplayer.data.playlist.model.PlaybackHeaders
 import com.valladares.iptvplayer.data.playlist.model.Playlist
 import com.valladares.iptvplayer.data.playlist.model.PlaylistSourceType
 import com.valladares.iptvplayer.data.playlist.parser.M3UParser
@@ -168,5 +170,33 @@ class PlaylistRepositoryImpl @Inject constructor(
         } else {
             null
         }
+    }
+
+    /**
+     * @see PlaylistRepository.getPlaybackHeaders
+     */
+    override suspend fun getPlaybackHeaders(playlistId: String): PlaybackHeaders {
+        val playlist = playlistDao.getById(playlistId)
+        return PlaybackHeaders(
+            userAgent = playlist?.userAgent ?: AppConstants.DEFAULT_USER_AGENT,
+            referer = playlist?.referer
+        )
+    }
+
+    /**
+     * @see PlaylistRepository.updatePlaybackHeaders
+     */
+    override suspend fun updatePlaybackHeaders(
+        playlistId: String,
+        userAgent: String?,
+        referer: String?
+    ) {
+        val normalizedUserAgent = userAgent?.trim()?.takeIf { it.isNotEmpty() }
+        val normalizedReferer = referer?.trim()?.takeIf { it.isNotEmpty() }
+        playlistDao.updatePlaybackHeaders(
+            playlistId = playlistId,
+            userAgent = normalizedUserAgent,
+            referer = normalizedReferer
+        )
     }
 }

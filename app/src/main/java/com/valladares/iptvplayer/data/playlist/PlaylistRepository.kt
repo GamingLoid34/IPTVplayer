@@ -1,6 +1,7 @@
 package com.valladares.iptvplayer.data.playlist
 
 import com.valladares.iptvplayer.data.playlist.model.Channel
+import com.valladares.iptvplayer.data.playlist.model.PlaybackHeaders
 import com.valladares.iptvplayer.data.playlist.model.Playlist
 import com.valladares.iptvplayer.data.playlist.model.PlaylistSourceType
 import com.valladares.iptvplayer.data.xtream.model.XtreamCredentials
@@ -49,4 +50,20 @@ interface PlaylistRepository {
      * Returns stored Xtream credentials for [playlistId], or null for M3U-only lists.
      */
     suspend fun getXtreamCredentials(playlistId: String): XtreamCredentials?
+
+    /**
+     * Returns effective playback headers for one playlist.
+     */
+    suspend fun getPlaybackHeaders(playlistId: String): PlaybackHeaders
+
+    /**
+     * Updates optional playback header overrides for one playlist.
+     *
+     * Blank inputs are normalized to null.
+     */
+    suspend fun updatePlaybackHeaders(
+        playlistId: String,
+        userAgent: String?,
+        referer: String?
+    )
 }
