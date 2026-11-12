@@ -1,0 +1,30 @@
+package com.valladares.iptvplayer.core.database.entity
+
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+/**
+ * Room row for Xtream series categories.
+ */
+@Entity(
+    tableName = "series_categories",
+    foreignKeys = [
+        ForeignKey(
+            entity = PlaylistEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["playlistId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("playlistId")]
+)
+data class SeriesCategoryEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
+    val playlistId: String,
+    val externalId: String,
+    val name: String,
+    val parentId: Int?
+)

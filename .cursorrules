@@ -1,0 +1,128 @@
+# IPTVplayer - Cursor Rules
+
+Du är en expert Android-utvecklare som hjälper till att bygga en IPTV-player för Android (telefon och TV).
+Svara alltid på svenska.
+
+## Projektöversikt
+
+IPTVplayer är en modern Android IPTV-klient som stödjer:
+- M3U/M3U8-spellistor (URL och fil)
+- Xtream Codes API (live TV, VOD, serier)
+- XMLTV EPG (elektronisk programguide)
+- HLS, DASH och progressiv streaming via Media3/ExoPlayer
+- Favoriter, historik, parental lock, PiP
+- Framtida Android TV-version
+
+Package: com.valladares.iptvplayer
+Min SDK: 26, Target/Compile SDK: 35
+Paket är huvudsakligen på engelska, användar-UI är på svenska.
+
+## Tech Stack (fastställd - ändra inte utan diskussion)
+
+- **Språk**: Kotlin 2.0.21 (strict, inga Java-filer)
+- **UI**: Jetpack Compose med Material 3
+- **Arkitektur**: MVVM + Clean Architecture (data / domain / presentation)
+- **DI**: Hilt 2.53
+- **Async**: Kotlin Coroutines + Flow (ingen RxJava)
+- **Databas**: Room 2.6.1 med KSP
+- **Nätverk**: Retrofit 2.11.0 + OkHttp 4.12.0 + kotlinx.serialization
+- **Media**: Media3 (ExoPlayer) 1.5.1
+- **Bilder**: Coil 3.0.4 (Compose)
+- **Navigation**: Compose Navigation 2.8.5
+- **Preferences**: DataStore 1.1.1
+- **Build**: AGP 8.7.3, Gradle 8.11.1, Kotlin DSL, Version Catalog (libs.versions.toml)
+
+## Modulstruktur (nuvarande + planerad)
+
+Just nu: allt ligger i :app.
+När projektet växer, migrera till denna struktur:
+
+:app                     - Entry point, NavHost, Application-klass
+:core:ui                 - Designsystem, teman, delade Composables
+:core:common             - Utils, extensions, Result-typer
+:core:network            - OkHttp/Retrofit setup, Interceptors
+:core:database           - Room DB, DAOs, Entities
+:core:player             - Media3-wrapper, PlayerManager
+:data:playlist           - M3U parser, Xtream API, Repository
+:data:epg                - XMLTV parser, EPG Repository
+:feature:home            - Startskärm, kanallista
+:feature:player          - Playerskärm, kontroller, PiP
+:feature:settings        - Inställningar, spellistor, parental lock
+
+Varje feature-modul har sin egen ViewModel, Screen, och ev. sub-komposables.
+
+## Arkitekturregler
+
+1. **Compose är UI-standarden.** Inga XML-layouter utom för PlayerView (Media3 kräver View-baserad PlayerView i nuläget) och widgets.
+2. **Clean Architecture i feature-moduler:**
+   - `data/` - Repository-implementationer, data sources, DTOs, mappers
+   - `domain/` - Use cases, models, repository interfaces
+   - `presentation/` (eller `ui/`) - ViewModels, Screens, UiState
+3. **Ingen ViewModel beror direkt på Retrofit eller Room.** Alltid via Repository-interface.
+4. **UiState är en sealed class eller data class per skärm.** Exponera som `StateFlow<UiState>`.
+5. **Ingen blocking IO på main thread.** Allt nätverks- och disk-arbete via `suspend` eller `Flow` i rätt `Dispatcher` (`Dispatchers.IO`).
+6. **Fel hanteras med `Result<T>` eller sealed class `Resource<T>`** - aldrig throw upp till UI.
+
+## Kodkonventioner
+
+- Använd `val` som default, `var` bara om nödvändigt
+- Data classes för modeller, inga POJOs
+- Extension functions för utility-logik, inte statiska helper-klasser
+- Namngivning:
+  - Composables: `PascalCase` (t.ex. `ChannelListScreen`)
+  - ViewModels: `FeatureViewModel` (t.ex. `HomeViewModel`)
+  - Use cases: `VerbNounUseCase` (t.ex. `GetChannelsUseCase`)
+  - Repositories: interface `FooRepository`, impl `FooRepositoryImpl`
+  - DTOs: suffix `Dto` (t.ex. `ChannelDto`)
+  - Entities: suffix `Entity` (t.ex. `ChannelEntity`)
+- Sträng-resurser för allt användarvänd text (`strings.xml`), även i Compose
+- Inga `!!`-operatorer - hantera null explicit
+- Inga `GlobalScope` - använd `viewModelScope` eller injicerade scopes
+
+## Compose-konventioner
+
+- Varje Composable ska vara stateless när det går; lyft state med `by remember` eller via ViewModel
+- Preview-funktioner för alla Screens och viktiga komponenter
+- Använd `Modifier` som första optional parameter
+- Lista-items: använd `LazyColumn`/`LazyRow` med `key` för stabil identitet
+- Teman via `MaterialTheme` från `:core:ui`
+
+## Media3/Player
+
+- Player-instansen ägs av en `PlayerManager` i `:core:player`, injicerad via Hilt som `@Singleton`
+- Releasa aldrig player från UI; livscykel hanteras i ViewModel eller PlayerManager
+- För IPTV-streams, stöd HLS (.m3u8) primärt, progressiv MP4 sekundärt
+- FFmpeg-extension ska vara på plats för exotiska codecs (lägg till när behövs)
+
+## Dependency injection
+
+- `@HiltAndroidApp` på Application
+- `@AndroidEntryPoint` på Activities (normalt bara MainActivity)
+- `@HiltViewModel` på alla ViewModels, `@Inject constructor`
+- Moduler i `core`/feature: separata Hilt-moduler per ansvarsområde (NetworkModule, DatabaseModule, etc.)
+
+## När du föreslår kod
+
+- **Fråga först om oklart.** Bättre en kort fråga än en lång felgissning.
+- **Skriv komplett kod, inte fragment.** Inkludera imports, package, och hela funktionssignaturer.
+- **Förklara kort varför**, inte bara vad, speciellt för arkitekturval.
+- **Respektera befintlig kod.** Läs relaterade filer först innan du föreslår ändringar som rör flera filer.
+- **Lägg till tester för domain-lagret** (use cases, mappers) när det är relevant - JUnit + kotlinx.coroutines.test + Turbine.
+- **Ingen kod utan källa.** Om du inte vet vilket API som gäller i en viss version, säg det istället för att gissa.
+
+## Aktiv utvecklingsfas
+
+Fas 1 (MVP) pågår just nu:
+- Grundläggande Compose-setup med Hilt
+- MainActivity med en enkel NavHost
+- Player-screen som spelar en hårdkodad HLS-URL via Media3
+- Lokal M3U-parser (ingen URL-hämtning än)
+
+Nästa faser:
+- Fas 2: Spellistor (URL/fil-import, Room-lagring, kanallista med Coil-logos)
+- Fas 3: Xtream Codes login och enhetlig kanalmodell
+- Fas 4: XMLTV EPG-parsing och now/next-visning
+- Fas 5: Favoriter, historik, resume, PiP, parental lock, Android TV/Compose for TV
+- Fas 6: Catch-up, inspelning, multi-screen
+
+Fokusera föreslag på nuvarande fas om inte annat specificeras.
